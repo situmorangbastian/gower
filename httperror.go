@@ -28,21 +28,15 @@ func ErrMiddleware(ctx *fiber.Ctx, err error) error {
 
 	// Check error based on error type
 	switch errors.Cause(err).(type) {
-	case models.ErrorValidation:
+	case models.ConstraintError:
 		return ctx.Status(http.StatusBadRequest).JSON(errResponse)
-	}
-
-	httpStatus := http.StatusInternalServerError
-
-	switch errors.Cause(err) {
-	case models.ErrBadRequest:
-		httpStatus = http.StatusBadRequest
-	case models.ErrNotFound:
-		httpStatus = http.StatusNotFound
+	case models.NotFoundError:
+		return ctx.Status(http.StatusNotFound).JSON(errResponse)
+	case models.ConflictError:
+		return ctx.Status(http.StatusConflict).JSON(errResponse)
 	default:
 		log.Error(err)
 		errResponse.Message = "Internal Server Error"
+		return ctx.Status(http.StatusInternalServerError).JSON(errResponse)
 	}
-
-	return ctx.Status(httpStatus).JSON(errResponse)
 }
